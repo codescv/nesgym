@@ -37,7 +37,7 @@ class DoubleDQN(object):
                  image_shape,
                  num_actions,
                  frame_history_len=4,
-                 replay_buffer_size=1000000,
+                 replay_buffer_size=10000,
                  training_freq=4,
                  training_starts=5000,
                  training_batch_size=32,
@@ -47,7 +47,9 @@ class DoubleDQN(object):
                  log_dir="logs/"):
         """
             Double Deep Q Network
-            params:
+
+            Parameters
+            ----------
             image_shape: (height, width, n_values)
             num_actions: how many different actions we can choose
             frame_history_len: feed this number of frame data as input to the deep-q Network
@@ -106,12 +108,17 @@ class DoubleDQN(object):
 
     def get_learning_rate(self):
         optimizer = self.base_model.optimizer
+        print("optimizer =", optimizer)  # DEBUG
+        print("optimizer.lr =", optimizer.lr)  # DEBUG
+        print("optimizer.decay =", optimizer.decay)  # DEBUG
+        print("optimizer.iterations =", optimizer.iterations)  # DEBUG
         lr = K.eval(optimizer.lr * (1. / (1. + optimizer.decay * optimizer.iterations)))
         return lr
 
     def get_avg_loss(self):
         if len(self.latest_losses) > 0:
-            return np.mean(np.array(self.latest_losses, dtype=np.float32))
+            # return np.mean(np.array(self.latest_losses, dtype=np.float32))
+            return np.mean(np.array(self.latest_losses))
         else:
             return None
 
@@ -120,23 +127,25 @@ class DoubleDQN(object):
         q = self.base_model.predict(obs_t)
         q_t1 = self.target_model.predict(obs_t1)
         q_t1_max = np.max(q_t1, axis=1)
-        # print('q:\n', q)
-        # print('q_t1:\n', q_t1)
-        # print('q_t1_max:\n', q_t1_max)
-        # print('action:\n', action)
+        print('q:\n', q)  # DEBUG
+        print('q_t1:\n', q_t1)  # DEBUG
+        print('q_t1_max:\n', q_t1_max)  # DEBUG
+        print('action:\n', action)  # DEBUG
 
         # for idx in range(len(q)):
         #     q[idx][action[idx]] = reward[idx] + q_t1_max[idx] * self.reward_decay * (1-done_mask[idx])
         q[range(len(action)), action] = reward + q_t1_max * self.reward_decay * (1-done_mask)
-        # print('reward:\n', reward)
-        # print('qt1_max:\n', q_t1_max)
-        # print('done mask:\n', done_mask)
-        # print("q': \n", q)
-        # self.base_model.fit(obs_t, q, batch_size=self.training_batch_size, epochs=1)
+
+        print('reward:\n', reward)  # DEBUG
+        print('qt1_max:\n', q_t1_max)  # DEBUG
+        print('done mask:\n', done_mask)  # DEBUG
+        print("q': \n", q)  # DEBUG
+
+        # self.base_model.fit(obs_t, q, batch_size=self.training_batch_size, epochs=1, callbacks=self.tensorboard_callback)
         loss = self.base_model.train_on_batch(obs_t, q)
         self.latest_losses.append(loss)
 
     def _update_target(self):
         weights = self.base_model.get_weights()
-        # print('update target', weights)
+        print('update target', weights)  # DEBUG
         self.target_model.set_weights(weights)

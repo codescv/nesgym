@@ -165,15 +165,21 @@ class NESEnv(gym.Env, utils.EzPickle):
         self.command_cond = Condition()
         self.viewer = None
         self.reward = 0
-        episode_time_length_secs = 7
-        frame_skip = 5
+        episode_time_length_secs = 3600  # one hour is the max time!
+        frame_skip = 4
         fps = 60
         self.episode_length = episode_time_length_secs * fps / frame_skip
 
+        # All the possible actions.  Try to use the smallest
+        # possible number of actionsin the child class!
         self.actions = [
             'U', 'D', 'L', 'R',
             'UR', 'DR', 'URA', 'DRB',
-            'A', 'B', 'RB', 'RA']
+            'UL', 'DL', 'ULA', 'DLB',
+            'A', 'B',
+            'RB', 'RA'
+            'LB', 'LA'
+        ]
         self.action_space = spaces.Discrete(len(self.actions))
         self.frame = 0
 
